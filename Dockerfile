@@ -1,12 +1,13 @@
 FROM postgres:latest
 
-ADD db/* /stockdb
+ADD db /stock
 RUN set -eux; \
 cd /; \
 mkdir /db; \
-chmod -R 777 /stockdb /db; \
+chmod -R 777 /stock /db; \
 echo "#!/usr/bin/env bash\n\
 set -e;\n\
+cp -nr /stock/db/* /db;\n\
 start-postgres() {\n\
 set -- postgres\n\
 $(cat docker-entrypoint.sh | head -n -1);\n\
