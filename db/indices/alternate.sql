@@ -48,7 +48,7 @@ indices AS (
     FROM pageconflict
     UNION ALL
     SELECT 'polemic'::w2o.myindex AS type, page_id, year,
-    1000*revertcount/(positivecount + MAX(revertcount) OVER(PARTITION BY page_depth, year)) AS weight
+    1000*revertcount/GREATEST(positivecount+revertcount,AVG(positivecount+revertcount) OVER(PARTITION BY page_depth, year)) AS weight
     FROM pageeditscount
 ),
 types AS (
