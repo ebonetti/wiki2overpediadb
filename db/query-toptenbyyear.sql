@@ -7,18 +7,18 @@ WITH years AS (
 ), topics AS (
     SELECT page_id AS topic_id
     FROM w2o.pages
-    WHERE page_depth = 1
+    WHERE page_type = 'topic'::w2o.mypagetype
 ), types AS (
     SELECT DISTINCT type
     FROM w2o.indicesbyyear
-    WHERE page_depth = 2
+    WHERE page_type = 'article'::w2o.mypagetype
 ), top10 AS (
-    SELECT _.year, _.type, array_agg(CAST((p.page_id, p.page_title, p.page_abstract, p.parent_id, p.page_depth, p.page_creationyear) AS w2o.page) ORDER BY weight DESC) AS pages 
+    SELECT _.year, _.type, array_agg(CAST((p.page_id, p.page_title, p.page_abstract, p.parent_id, p.page_type, p.page_creationyear) AS w2o.page) ORDER BY weight DESC) AS pages 
     FROM years, topics, types,
     LATERAL (
         SELECT year, type, page_id, weight
         FROM w2o.indicesbyyear
-        WHERE year = years.year AND topic_id = topics.topic_id AND type = types.type AND page_depth = 2
+        WHERE year = years.year AND topic_id = topics.topic_id AND type = types.type AND page_type = 'article'::w2o.mypagetype
         ORDER BY weight DESC
         LIMIT 10
     ) _ JOIN w2o.pages p USING (page_id)

@@ -2,7 +2,7 @@
 WITH topics AS (
     SELECT page_id AS topic_id
     FROM w2o.pages
-    WHERE page_depth = 1
+    WHERE page_type = 'topic'::w2o.mypagetype
 ), percentiledindices AS (
     SELECT type, page_id, year, weight,
     percent_rank() OVER w AS percentile,
@@ -12,10 +12,10 @@ WITH topics AS (
     percent_rank() OVER tw AS topic_percentile,
     rank() OVER twd AS topic_rank
     FROM w2o.indicesbyyear
-    WINDOW w AS (PARTITION BY type, year, page_depth ORDER BY weight),
-    wd AS (PARTITION BY type, year, page_depth ORDER BY weight DESC),
-    tw AS (PARTITION BY type, year, page_depth, topic_id ORDER BY weight),
-    twd AS (PARTITION BY type, year, page_depth, topic_id ORDER BY weight DESC)
+    WINDOW w AS (PARTITION BY type, year, page_type ORDER BY weight),
+    wd AS (PARTITION BY type, year, page_type ORDER BY weight DESC),
+    tw AS (PARTITION BY type, year, page_type, topic_id ORDER BY weight),
+    twd AS (PARTITION BY type, year, page_type, topic_id ORDER BY weight DESC)
 ), percentiledindicesagg AS (
     SELECT page_id, type,array_agg(CAST((weight, percentile, dense_percentile, rank, topic_percentile, topic_dense_percentile, topic_rank, year) AS w2o.yearmeasurement) ORDER BY year ASC) AS measurements
     FROM percentiledindices
@@ -25,13 +25,13 @@ WITH topics AS (
     FROM percentiledindicesagg
     GROUP BY page_id
 ) SELECT row_to_json(CAST((
-    CAST((page_id, page_title, page_abstract, parent_id, page_depth, page_creationyear) AS w2o.page),
+    CAST((page_id, page_title, page_abstract, parent_id, page_type, page_creationyear) AS w2o.page),
     COALESCE(stats,array[]::w2o.indextype2measurements[]),
     COALESCE(socialjumps,array[]::w2o.page[])
 ) AS w2o.pageinfo))
 FROM w2o.pages p LEFT JOIN LATERAL (
-    SELECT array_agg(CAST((page_id, page_title, page_abstract, parent_id, page_depth, page_creationyear) AS w2o.page) ORDER BY nr) AS socialjumps
+    SELECT array_agg(CAST((page_id, page_title, page_abstract, parent_id, page_type, page_creationyear) AS w2o.page) ORDER BY nr) AS socialjumps
     FROM unnest(p.page_socialjumps) WITH ORDINALITY _(page_id, nr) JOIN w2o.pages USING (page_id)
 ) _ ON TRUE
 JOIN percentiledindicesaggagg USING (page_id)
-ORDER BY p.page_depth,p.page_title;
+ORDER BY p.page_type,p.page_title;

@@ -37,12 +37,15 @@ incompletearticleeditscount AS (
     SELECT *
     FROM incompletearticleeditscount
 ), pageeditscount AS (
-    SELECT parent_id AS page_id, (parent_id>0)::INTEGER AS page_depth, year,
+    SELECT parent_id AS page_id, 
+    CASE WHEN parent_id = 0 THEN 'global'::w2o.mypagetype
+        ELSE 'topic'::w2o.mypagetype
+    END AS page_type, year,
     SUM(positivecount)::FLOAT AS positivecount, SUM(revertcount)::FLOAT AS revertcount
     FROM articleeditscount JOIN w2o.pagetree USING (page_id)
     GROUP BY parent_id, year
     UNION ALL
-    SELECT page_id, 2 AS page_depth, year,
+    SELECT page_id, 'article'::w2o.mypagetype AS page_type, year,
     positivecount::FLOAT AS positivecount, revertcount::FLOAT AS revertcount
     FROM articleeditscount
 ),
@@ -51,19 +54,19 @@ indices AS (
     FROM pageconflict
     UNION ALL
     SELECT 'polemic'::w2o.myindex AS type, page_id, year,
-    1000*revertcount/GREATEST(positivecount+revertcount,AVG(positivecount+revertcount) OVER(PARTITION BY page_depth, year)) AS weight
+    1000*revertcount/GREATEST(positivecount+revertcount,AVG(positivecount+revertcount) OVER(PARTITION BY page_type, year)) AS weight
     FROM pageeditscount
 ),
 types AS (
-    SELECT DISTINCT type, page_depth
+    SELECT DISTINCT type, page_type
     FROM indices JOIN w2o.pages USING (page_id)
 ), typepageyear AS (
-    SELECT type, page_id, parent_id, page_depth, _.year
-    FROM w2o.pages JOIN types USING (page_depth),
+    SELECT type, page_id, parent_id, page_type, _.year
+    FROM w2o.pages JOIN types USING (page_type),
     w2o.timebounds, generate_series(page_creationyear,maxyear) _(year)
     UNION ALL
-    SELECT type, page_id, parent_id, page_depth, 0 AS year
-    FROM w2o.pages JOIN types USING (page_depth)
+    SELECT type, page_id, parent_id, page_type, 0 AS year
+    FROM w2o.pages JOIN types USING (page_type)
 )
-SELECT type, page_id, parent_id AS topic_id, page_depth, year, COALESCE(weight,0) AS weight
+SELECT type, page_id, parent_id AS topic_id, page_type, year, COALESCE(weight,0) AS weight
 FROM indices RIGHT JOIN typepageyear USING (type, page_id, year);

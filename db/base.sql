@@ -1,44 +1,47 @@
 DROP SCHEMA IF EXISTS w2o CASCADE;
 CREATE SCHEMA w2o;
 
+/*Myindex represents page type, it can be global, topic or article*/
+CREATE TYPE w2o.mypagetype AS ENUM ('global', 'topic', 'article');
+
 CREATE COLLATION w2o.mycollate (LOCALE = 'en_US.UTF-8');
 
 /*Pages represents wikipedia articles and overpedia topics*/
 CREATE TABLE w2o.pages (
-    page_id INTEGER NOT NULL,
-    page_title VARCHAR(512) COLLATE w2o.mycollate,
-    page_abstract TEXT COLLATE w2o.mycollate,
-    parent_id INTEGER NOT NULL,
-    page_socialjumps INTEGER[] NOT NULL DEFAULT '{}',
-    page_depth INTEGER NOT NULL DEFAULT 2,
-    page_creationyear INTEGER
+    page_id            INTEGER NOT NULL,
+    page_title         VARCHAR(512) COLLATE w2o.mycollate,
+    page_abstract      TEXT COLLATE w2o.mycollate,
+    parent_id          INTEGER NOT NULL,
+    page_socialjumps   INTEGER[] NOT NULL DEFAULT '{}',
+    page_type          w2o.mypagetype NOT NULL DEFAULT 'article'::w2o.mypagetype,
+    page_creationyear  INTEGER
 );
 
 /*Revisions represents wikipedia article edits */
 CREATE TABLE w2o.revisions (
-    page_id INTEGER NOT NULL,
-    rev_serialid INTEGER NOT NULL,
-    user_id INTEGER,
-    user_isbot BOOLEAN NOT NULL,
-    rev_charweight FLOAT NOT NULL,
-    rev_chardiff FLOAT NOT NULL,
-    rev_isrevert INTEGER NOT NULL,
-    rev_isreverted BOOLEAN NOT NULL,
-    rev_timestamp TIMESTAMP NOT NULL,
-    rev_year INTEGER
+    page_id            INTEGER NOT NULL,
+    rev_serialid       INTEGER NOT NULL,
+    user_id            INTEGER,
+    user_isbot         BOOLEAN NOT NULL,
+    rev_charweight     FLOAT NOT NULL,
+    rev_chardiff       FLOAT NOT NULL,
+    rev_isrevert       INTEGER NOT NULL,
+    rev_isreverted     BOOLEAN NOT NULL,
+    rev_timestamp      TIMESTAMP NOT NULL,
+    rev_year           INTEGER
 );
 
 /*Socialjumps is a temporary table used for loading socialjumps, later data is merged into pages table*/
 CREATE TABLE w2o.socialjumps (
-    page_id INTEGER NOT NULL,
-    page_socialjumps INTEGER[10]
+    page_id            INTEGER NOT NULL,
+    page_socialjumps   INTEGER[10]
 );
 
 
 /*Load data and define table indexes*/
 
 /*Dummy page used for global statistics*/
-INSERT INTO w2o.pages(page_id, parent_id, page_depth) VALUES (0, 0, 0);
+INSERT INTO w2o.pages(page_id, parent_id, page_type) VALUES (0, 0, 'global'::w2o.mypagetype);
 
 COPY w2o.pages(page_id,page_title,page_abstract,parent_id) FROM :'pagesfilepath' WITH CSV HEADER;
 COPY w2o.revisions(page_id,rev_serialid,user_id,user_isbot,rev_charweight,rev_chardiff, rev_isrevert, rev_isreverted, rev_timestamp) FROM :'revisionsfilepath' WITH CSV HEADER;
@@ -46,10 +49,10 @@ COPY w2o.revisions(page_id,rev_serialid,user_id,user_isbot,rev_charweight,rev_ch
 ALTER TABLE w2o.pages
     ADD PRIMARY KEY (page_id),
     ADD FOREIGN KEY (parent_id) REFERENCES w2o.pages (page_id);
-UPDATE w2o.pages SET page_depth = 1 WHERE parent_id=0 AND page_id!=0;
+UPDATE w2o.pages SET page_type = 'topic'::w2o.mypagetype WHERE parent_id=0 AND page_id!=0;
 CLUSTER w2o.pages USING pages_pkey;
 ANALYZE w2o.pages;
-CREATE INDEX ON w2o.pages (page_depth, page_title);
+CREATE INDEX ON w2o.pages (page_type, page_title);
 
 UPDATE w2o.revisions SET rev_year = CAST (EXTRACT(YEAR FROM date_trunc('year', rev_timestamp)) AS INTEGER);
 ALTER TABLE w2o.revisions
@@ -71,7 +74,7 @@ UPDATE w2o.pages SET (page_socialjumps,page_creationyear) = (_.page_socialjumps,
     WITH pagecreation AS (
     SELECT page_id, minyear AS page_creationyear
     FROM w2o.timebounds, w2o.pages
-    WHERE page_depth < 2 
+    WHERE page_type != 'article'::w2o.mypagetype
     UNION ALL
     SELECT page_id, MIN(rev_year) AS page_creationyear
     FROM w2o.revisions

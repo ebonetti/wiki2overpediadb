@@ -28,12 +28,12 @@ WITH articleusersocialindices AS (
 articlecountyears AS (
     SELECT _.year, COUNT(*)::FLOAT AS totalpagecount
     FROM w2o.timebounds, w2o.pages, generate_series(page_creationyear,maxyear) _(year)
-    WHERE page_depth = 2
+    WHERE page_type = 'article'::w2o.mypagetype
     GROUP BY _.year
     UNION ALL
     SELECT 0 AS year, COUNT(*)::FLOAT AS totalpagecount
     FROM w2o.pages
-    WHERE page_depth = 2
+    WHERE page_type = 'article'::w2o.mypagetype
 ),
 pageusersocialindicescount AS (
     SELECT type, page_id, year, COUNT(*)::FLOAT AS weight
@@ -43,7 +43,7 @@ pageusersocialindicescount AS (
     SELECT page_id, year, p1.weight AS popularity, p2.weight AS conflict
     FROM w2o.pages JOIN pageusersocialindicescount p1 USING (page_id)
     JOIN pageusersocialindicescount p2 USING (page_id, year)
-    WHERE p1.type IS NULL AND p2.type = 'conflict'::w2o.myindex AND page_depth = 2
+    WHERE p1.type IS NULL AND p2.type = 'conflict'::w2o.myindex AND page_type = 'article'::w2o.mypagetype
 ), SparseEQPopularityEQConflict AS (
     SELECT year, popularity, conflict, COUNT(*) as count
     FROM w2o.pages p JOIN pairedarticlesocialindicescount p1 USING (page_id)
@@ -106,15 +106,15 @@ indices AS (
     GROUP BY parent_id, year
 ),
 types AS (
-    SELECT DISTINCT type, page_depth
+    SELECT DISTINCT type, page_type
     FROM indices JOIN w2o.pages USING (page_id)
 ), typepageyear AS (
-    SELECT type, page_id, parent_id, page_depth, _.year
-    FROM w2o.pages JOIN types USING (page_depth),
+    SELECT type, page_id, parent_id, page_type, _.year
+    FROM w2o.pages JOIN types USING (page_type),
     w2o.timebounds, generate_series(page_creationyear,maxyear) _(year)
     UNION ALL
-    SELECT type, page_id, parent_id, page_depth, 0 AS year
-    FROM w2o.pages JOIN types USING (page_depth)
+    SELECT type, page_id, parent_id, page_type, 0 AS year
+    FROM w2o.pages JOIN types USING (page_type)
 )
-SELECT type, page_id, parent_id AS topic_id, page_depth, year, COALESCE(weight,0) AS weight
+SELECT type, page_id, parent_id AS topic_id, page_type, year, COALESCE(weight,0) AS weight
 FROM indices RIGHT JOIN typepageyear USING (type, page_id, year);
