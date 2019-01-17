@@ -1,9 +1,6 @@
 DROP SCHEMA IF EXISTS w2o CASCADE;
 CREATE SCHEMA w2o;
 
-/*Myindex represents index types of statistics*/
-CREATE TYPE w2o.myindex AS ENUM ('conflict', 'polemic');
-
 CREATE COLLATION w2o.mycollate (LOCALE = 'en_US.UTF-8');
 
 /*Pages represents wikipedia articles and overpedia topics*/

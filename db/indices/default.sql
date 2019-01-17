@@ -1,3 +1,6 @@
+/*Myindex represents index types of statistics*/
+CREATE TYPE w2o.myindex AS ENUM ('conflict', 'polemic');
+
 /*Define indicesbyyear table that for each page contains yearly conflict and polemic statistic*/
 /*Indices must defined in a way that missing entries correctly default to 0.0*/
 CREATE TABLE w2o.indicesbyyear AS
