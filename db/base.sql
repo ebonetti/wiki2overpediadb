@@ -98,10 +98,3 @@ FROM w2o.pages p1 JOIN w2o.pages p2 ON p1.page_id=p2.parent_id;
 CREATE INDEX pagetree_cluster_index ON w2o.pagetree (page_id, parent_id);
 CLUSTER w2o.pagetree USING pagetree_cluster_index;
 ANALYZE w2o.pagetree;
-
-
-/*topicpages is a utility view for simplifing queries by joining article and its topic information*/
-CREATE VIEW w2o.topicpages AS
-SELECT p2.*, p2.page_depth<2 AS istopic, COALESCE(p1.page_title, p2.page_title) AS topic_fulltitle,
-lower(split_part(COALESCE(p1.page_title, p2.page_title),' ',1)) AS topic_title
-FROM w2o.pages p1 JOIN w2o.pages p2 ON p1.page_id=p2.parent_id;

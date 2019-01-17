@@ -13,7 +13,7 @@ WITH years AS (
     FROM w2o.indicesbyyear
     WHERE page_depth = 2
 ), top10 AS (
-    SELECT _.year, _.type, array_agg(CAST((tp.page_title, tp.page_abstract, tp.topic_title, tp.istopic) AS w2o.mypage) ORDER BY weight DESC) AS pages 
+    SELECT _.year, _.type, array_agg(CAST((p.page_id, p.page_title, p.page_abstract, p.parent_id, p.page_depth, p.page_creationyear) AS w2o.page) ORDER BY weight DESC) AS pages 
     FROM years, topics, types,
     LATERAL (
         SELECT year, type, page_id, weight
@@ -21,7 +21,7 @@ WITH years AS (
         WHERE year = years.year AND topic_id = topics.topic_id AND type = types.type AND page_depth = 2
         ORDER BY weight DESC
         LIMIT 10
-    ) _ JOIN w2o.topicpages tp USING (page_id)
+    ) _ JOIN w2o.pages p USING (page_id)
     GROUP BY _.year, _.type
 ), yearjson AS (
     SELECT year, row_to_json(CAST((year, array_agg(CAST((type, pages) AS w2o.indexranking) ORDER BY type)) AS w2o.annualindexesranking)) AS json

@@ -11,14 +11,14 @@ ANALYZE w2o.indicesbyyear;
 /*The following types are used by the pages and toptenbyyear queries*/
 
 CREATE TYPE w2o.yearmeasurement AS (
-	Value            FLOAT,
-	Percentile       FLOAT,
-	DensePercentile  FLOAT,
-	Rank             INT,
-	TopicPercentile  FLOAT,
+	Value                 FLOAT,
+	Percentile            FLOAT,
+	DensePercentile       FLOAT,
+	Rank                  INTEGER,
+	TopicPercentile       FLOAT,
 	TopicDensePercentile  FLOAT,
-	TopicRank        INT,
-	Year             INT
+	TopicRank             INTEGER,
+	Year                  INTEGER
 );
 
 CREATE TYPE w2o.indextype2measurements AS (
@@ -26,36 +26,27 @@ CREATE TYPE w2o.indextype2measurements AS (
     Measurements    w2o.yearmeasurement[]
 );
 
-CREATE TYPE w2o.mypage AS (
-    Title    VARCHAR(512),
-    Abstract  TEXT,
-    Topic    VARCHAR(512),
-    IsTopic BOOLEAN
+CREATE TYPE w2o.page AS (
+    ID            INTEGER,
+    Title         VARCHAR(512),
+    Abstract      TEXT,
+    ParentID      INTEGER,
+    PageDepth     INTEGER,
+    CreationYear  INTEGER
 );
-
-CREATE TYPE w2o.myextendedpage AS (
-    Title    VARCHAR(512),
-    Abstract  TEXT,
-    Topic    VARCHAR(512),
-    IsTopic BOOLEAN,
-    FullTopic    VARCHAR(512),
-    CreationYear  INTEGER,
-    PageDepth     INTEGER
-);
-
 
 CREATE TYPE w2o.pageinfo  AS (
-    Page        w2o.myextendedpage,
+    Page        w2o.page,
     Stats       w2o.indextype2measurements[],
-    Links       w2o.mypage[]
+    Links       w2o.page[]
 );
 
 CREATE TYPE w2o.indexranking AS (
     index    w2o.myindex,
-    ranking  w2o.mypage[]
+    ranking  w2o.page[]
 );
 
 CREATE TYPE w2o.annualindexesranking AS (
-    year    INTEGER,
-    indexesranking w2o.indexranking[]
+    year            INTEGER,
+    indexesranking  w2o.indexranking[]
 );

@@ -25,13 +25,13 @@ WITH topics AS (
     FROM percentiledindicesagg
     GROUP BY page_id
 ) SELECT row_to_json(CAST((
-    CAST((page_title, page_abstract, topic_title, istopic, topic_fulltitle, page_creationyear,page_depth) AS w2o.myextendedpage),
+    CAST((page_id, page_title, page_abstract, parent_id, page_depth, page_creationyear) AS w2o.page),
     COALESCE(stats,array[]::w2o.indextype2measurements[]),
-    COALESCE(socialjumps,array[]::w2o.mypage[])
+    COALESCE(socialjumps,array[]::w2o.page[])
 ) AS w2o.pageinfo))
-FROM w2o.topicpages tp LEFT JOIN LATERAL (
-    SELECT array_agg(CAST((page_title, page_abstract, topic_title, istopic) AS w2o.mypage) ORDER BY nr) AS socialjumps
-    FROM unnest(tp.page_socialjumps) WITH ORDINALITY _(page_id, nr) JOIN w2o.topicpages USING (page_id)
+FROM w2o.pages p LEFT JOIN LATERAL (
+    SELECT array_agg(CAST((page_id, page_title, page_abstract, parent_id, page_depth, page_creationyear) AS w2o.page) ORDER BY nr) AS socialjumps
+    FROM unnest(p.page_socialjumps) WITH ORDINALITY _(page_id, nr) JOIN w2o.pages USING (page_id)
 ) _ ON TRUE
 JOIN percentiledindicesaggagg USING (page_id)
-ORDER BY tp.page_depth,tp.page_title;
+ORDER BY p.page_depth,p.page_title;
