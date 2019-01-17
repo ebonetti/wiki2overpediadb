@@ -31,7 +31,7 @@ CREATE TYPE w2o.page AS (
     Title                 VARCHAR(512),
     Abstract              TEXT,
     ParentID              INTEGER,
-    PageType              w2o.mypagetype,
+    Type                  w2o.mypagetype,
     CreationYear          INTEGER
 );
 
