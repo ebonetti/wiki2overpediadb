@@ -1,7 +1,6 @@
 /*Load database*/
 \i base.sql;
-\i indices/default.sql;
-/*\i indices/alternate.sql;*/
+\i indices.sql;
 
 /*Disable pager for testing queries*/
 \pset pager off
