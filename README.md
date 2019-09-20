@@ -11,7 +11,7 @@ You will need a machine with 300GB of storage and [docker storage base directory
 This image is aimed at simplifing overpedia data analysis. It takes in input the folder containing the csv files (`pages.csv`,`revisions.csv` and `socialjumps.csv`) and optionally sql database files, otherwise they will be retrieved from the image.
 
 ### Examples
-1. `docker run -v /path/2/db:/db ebonetti/wiki2overpediadb --name myoverpediadb`:
+1. `docker run -v /path/2/db:/db negapedia/wiki2overpediadb --name myoverpediadb`:
 ..1. [mount as a volume](https://docs.docker.com/storage/volumes/) the guest `/db` folder to the host folder `/path/2/db`. This folder can be changed to an arbitrary folder of your choice;
 ..2. open a psql shell on the database, so that you can import the database with `\i base.sql;` and `\i indices/default.sql;`;
 ..3. save the container as `myoverpediadb` for later use, for further explanations please refer to [docker run reference](https://docs.docker.com/engine/reference/run).
@@ -19,7 +19,7 @@ This image is aimed at simplifing overpedia data analysis. It takes in input the
 3. `docker rm myoverpediadb`: remove the database container.
 
 ### Useful commands
-1. `docker pull ebonetti/wiki2overpediadb` Update the image to the last revision.
+1. `docker pull negapedia/wiki2overpediadb` Update the image to the last revision.
 2. `docker kill --signal=SIGQUIT  $(docker ps -ql)` Quit the last container and log trace dump.
 4. `docker logs -f $(docker ps -lq)` Fetch the logs of the last container.
 5. `docker system prune -fa --volumes` Remove all unused images and volume without asking for confirmation.
