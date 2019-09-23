@@ -34,4 +34,4 @@ FROM w2o.pages p LEFT JOIN LATERAL (
     FROM unnest(p.page_socialjumps) WITH ORDINALITY _(page_id, nr) JOIN w2o.pages USING (page_id)
 ) _ ON TRUE
 JOIN percentiledindicesaggagg USING (page_id)
-ORDER BY p.page_type,p.page_title;
+ORDER BY p.page_id;
